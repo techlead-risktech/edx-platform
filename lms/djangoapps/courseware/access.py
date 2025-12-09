@@ -394,6 +394,18 @@ def _has_access_course(user, action, courselike):
             else:
                 return has_not_expired
 
+
+        # Added by Mahendra to validate course access based on subscription
+        from access_subscriptions.utils import check_course_subscription_access
+        has_subscription_access = check_course_subscription_access(user, courselike)
+        if not has_subscription_access:
+            staff_access = _has_staff_access_to_block(user, courselike, courselike.id)
+            if staff_access:
+                return staff_access
+            else:
+                return has_subscription_access
+
+
         return ACCESS_GRANTED
 
     @function_trace('can_enroll')
