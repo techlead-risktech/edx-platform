@@ -397,7 +397,7 @@ def _has_access_course(user, action, courselike):
 
         # Added by Mahendra to validate course access based on subscription
         from access_subscriptions.utils import check_course_subscription_access
-        has_subscription_access = check_course_subscription_access(user, courselike)
+        has_subscription_access = check_course_subscription_access(user, courselike.id)
         if not has_subscription_access:
             staff_access = _has_staff_access_to_block(user, courselike, courselike.id)
             if staff_access:
