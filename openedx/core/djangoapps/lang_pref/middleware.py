@@ -53,8 +53,10 @@ class LanguagePreferenceMiddleware(MiddlewareMixin):
             request.META[LANGUAGE_HEADER] = accept_header
 
         # Apply language specified in SiteConfiguration, ignoring user preferences.
-        if language := get_value('LANGUAGE_CODE'):
-            request.COOKIES[settings.LANGUAGE_COOKIE_NAME] = language
+        # Updated by Mahendra
+        # Needs to comment this if using eox-tenant plugin
+        # if language := get_value('LANGUAGE_CODE'):
+        #     request.COOKIES[settings.LANGUAGE_COOKIE_NAME] = language
 
     def process_response(self, request, response):  # lint-amnesty, pylint: disable=missing-function-docstring
         # If the user is logged in, check for their language preference. Also check for real user
