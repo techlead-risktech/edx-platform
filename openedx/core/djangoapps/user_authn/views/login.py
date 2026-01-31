@@ -214,6 +214,17 @@ def _enforce_password_policy_compliance(request, user):  # lint-amnesty, pylint:
         raise AuthFailedError(HTML(str(e)), error_code=e.__class__.__name__)  # lint-amnesty, pylint: disable=raise-missing-from
 
 
+def validate_user_with_tenant(user):
+    """
+    Validate if the user is valid for the tenant.
+    """
+    if user.user_metadata.site and user.user_metadata.site.domain != settings.LMS_BASE:
+        raise AuthFailedError(
+            _("User is not authorized to login to this tenant."),
+            error_code="incorrect-email-or-password",
+            context={"user_domain": user.user_metadata.site.domain, "lms_base": settings.LMS_BASE},
+        )
+
 def _log_and_raise_inactive_user_auth_error(unauthenticated_user):
     """
     Depending on Django version we can get here a couple of ways, but this takes care of logging an auth attempt
@@ -610,6 +621,7 @@ def login_user(request, api_version="v1"):  # pylint: disable=too-many-statement
                 # Important: This call must be made AFTER the user was successfully authenticated.
                 _enforce_password_policy_compliance(request, possibly_authenticated_user)
 
+        validate_user_with_tenant(user)
         if possibly_authenticated_user is None or not (
             possibly_authenticated_user.is_active or settings.MARKETING_EMAILS_OPT_IN
         ):
