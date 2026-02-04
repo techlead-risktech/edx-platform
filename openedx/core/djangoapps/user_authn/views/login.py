@@ -218,7 +218,7 @@ def validate_user_with_tenant(user):
     """
     Validate if the user is valid for the tenant.
     """
-    if user.user_metadata.site and user.user_metadata.site.domain != settings.LMS_BASE:
+    if hasattr(user, 'user_metadata') and user.user_metadata.site and user.user_metadata.site.domain != settings.LMS_BASE:
         raise AuthFailedError(
             _("User is not authorized to login to this tenant."),
             error_code="incorrect-email-or-password",
