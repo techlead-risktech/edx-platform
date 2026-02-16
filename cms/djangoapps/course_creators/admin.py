@@ -72,13 +72,13 @@ class CourseCreatorAdmin(admin.ModelAdmin):
     # Fields to display on the overview page.
     list_display = ['username', get_email, 'state', 'state_changed', 'note', 'all_organizations']
     filter_horizontal = ('organizations',)
-    readonly_fields = ['username', 'state_changed']
-    # Controls the order on the edit form (without this, read-only fields appear at the end).
-    fieldsets = (
-        (None, {
-            'fields': ['username', 'state', 'state_changed', 'note', 'all_organizations', 'organizations']
-        }),
-    )
+    # readonly_fields = ['username', 'state_changed']
+    # # Controls the order on the edit form (without this, read-only fields appear at the end).
+    # fieldsets = (
+    #     (None, {
+    #         'fields': ['username', 'state', 'state_changed', 'note', 'all_organizations', 'organizations']
+    #     }),
+    # )
     # Fields that filtering support
     list_filter = ['state', 'state_changed']
     # Fields that search supports.
@@ -97,11 +97,11 @@ class CourseCreatorAdmin(admin.ModelAdmin):
 
     username.admin_order_field = 'user__username'
 
-    def has_add_permission(self, request):
-        return False
+    # def has_add_permission(self, request):
+    #     return False
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
 
     def has_change_permission(self, request, obj=None):
         return request.user.is_staff
