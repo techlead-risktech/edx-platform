@@ -388,6 +388,62 @@ def get_in_process_course_actions(request):
     ]
 
 
+def get_only_visible_courses(org=None, filter_=None, active_only=False, course_keys=None):
+    """
+    Yield the CourseOverviews that should be visible in this branded
+    instance.
+
+    Arguments:
+        org (string): Optional parameter that allows case-insensitive
+            filtering by organization.
+        filter_ (dict): Optional parameter that allows custom filtering by
+            fields on the course.
+        active_only (bool): Optional parameter that enables fetching active courses only.
+        course_keys (list[str]): Optional parameter that allows for selecting which
+            courses to fetch the `CourseOverviews` for
+    """
+    current_site_orgs = configuration_helpers.get_current_site_orgs()
+
+    courses = CourseOverview.objects.none()
+
+    if org:
+        # Check the current site's orgs to make sure the org's courses should be displayed
+        if not current_site_orgs or org in current_site_orgs:
+            courses = CourseOverview.get_all_courses(
+                orgs=[org], filter_=filter_, active_only=active_only, course_keys=course_keys
+            )
+    elif current_site_orgs:
+        # Only display courses that should be displayed on this site
+        courses = CourseOverview.get_all_courses(
+            orgs=current_site_orgs, filter_=filter_, active_only=active_only, course_keys=course_keys
+        )
+    else:
+        courses = CourseOverview.get_all_courses(filter_=filter_, active_only=active_only, course_keys=course_keys)
+
+    courses = courses.order_by('id')
+
+    # Filtering can stop here.
+    if current_site_orgs:
+        return courses
+
+    # See if we have filtered course listings in this domain
+    filtered_visible_ids = None
+
+    # this is legacy format, which also handle dev case, which should not filter
+    subdomain = configuration_helpers.get_value('subdomain', 'default')
+    if hasattr(settings, 'COURSE_LISTINGS') and subdomain in settings.COURSE_LISTINGS and not settings.DEBUG:
+        filtered_visible_ids = frozenset(
+            [CourseKey.from_string(c) for c in settings.COURSE_LISTINGS[subdomain]]
+        )
+
+    if filtered_visible_ids:
+        return courses.filter(id__in=filtered_visible_ids)
+    else:
+        # Filter out any courses based on current org, to avoid leaking these.
+        orgs = configuration_helpers.get_all_orgs()
+        return courses.exclude(org__in=orgs)
+
+
 def _accessible_courses_summary_iter(request):
     """
     List all courses available to the logged in user by iterating through all the courses
@@ -405,7 +461,8 @@ def _accessible_courses_summary_iter(request):
 
         return has_studio_read_access(request.user, course_summary.id)
 
-    courses_summary = CourseOverview.get_all_courses()
+
+    courses_summary = get_only_visible_courses(org=None, filter_=None, active_only=False, course_keys=None)
     search_query, order, active_only, archived_only = get_query_params_if_present(request)
     courses_summary = get_filtered_and_ordered_courses(
         courses_summary,
